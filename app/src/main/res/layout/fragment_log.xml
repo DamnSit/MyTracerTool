@@ -1,0 +1,106 @@
+<!-- res/layout/fragment_log.xml -->
+
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FF0D1117">
+
+    <!-- Header bar -->
+    <LinearLayout
+        android:id="@+id/headerBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="10dp"
+        android:background="#FF161B22"
+        android:gravity="center_vertical"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <!-- Label -->
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="TRACE LOG"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:fontFamily="monospace"
+            android:textColor="#FF58A6FF"
+            android:letterSpacing="0.15" />
+
+        <!-- Event counter -->
+        <TextView
+            android:id="@+id/tvNodeCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0 events"
+            android:textSize="11sp"
+            android:fontFamily="monospace"
+            android:textColor="#FF8B949E"
+            android:layout_marginEnd="12dp" />
+
+        <!-- Server status -->
+        <TextView
+            android:id="@+id/tvServerStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="○ OFFLINE"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:fontFamily="monospace"
+            android:textColor="#FF888888" />
+
+    </LinearLayout>
+
+    <!-- Empty state -->
+    <LinearLayout
+        android:id="@+id/tvEmpty"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="visible"
+        app:layout_constraintTop_toBottomOf="@id/headerBar"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="[ waiting for trace ]"
+            android:textSize="13sp"
+            android:fontFamily="monospace"
+            android:textColor="#FF3D444D" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="inject → install → launch target"
+            android:textSize="11sp"
+            android:fontFamily="monospace"
+            android:textColor="#FF2D343D"
+            android:layout_marginTop="4dp" />
+
+    </LinearLayout>
+
+    <!-- Trace tree RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvTraceTree"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        android:clipToPadding="false"
+        android:paddingBottom="80dp"
+        android:scrollbars="none"
+        app:layout_constraintTop_toBottomOf="@id/headerBar"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

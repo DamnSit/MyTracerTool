@@ -1,0 +1,11 @@
+<!-- res/drawable/ic_touch.xml -->
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="14dp"
+    android:height="14dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M9,11.24V7.5C9,6.12 10.12,5 11.5,5S14,6.12 14,7.5v3.74c1.21,-0.81 2,-2.18 2,-3.74C16,5.01 13.99,3 11.5,3S7,5.01 7,7.5C7,9.06 7.79,10.43 9,11.24zM18.84,15.87l-4.54,-2.26c-0.17,-0.07 -0.35,-0.11 -0.54,-0.11H13v-6c0,-0.83 -0.67,-1.5 -1.5,-1.5S10,6.67 10,7.5v10.74l-3.43,-0.72c-0.08,-0.01 -0.15,-0.02 -0.23,-0.02c-0.38,0 -0.74,0.15 -1.01,0.42l-1.01,1.02l5.51,5.51C10.32,24.99 10.9,25.25 11.5,25.25h6.77c1.03,0 1.91,-0.76 2.04,-1.78l0.63,-4.91C21.08,17.45 20.16,16.35 18.84,15.87z"/>
+</vector>

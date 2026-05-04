@@ -1,0 +1,107 @@
+<!-- res/layout/item_trace_node.xml -->
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!-- Divider untuk root node -->
+    <View
+        android:id="@+id/divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#1AFFFFFF"
+        android:visibility="gone" />
+
+    <!-- Container utama (indent di sini) -->
+    <LinearLayout
+        android:id="@+id/containerNode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:paddingEnd="8dp"
+        android:gravity="center_vertical"
+        android:background="?attr/selectableItemBackground"
+        android:minHeight="48dp">
+
+        <!-- Expand arrow -->
+        <ImageView
+            android:id="@+id/ivExpand"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_chevron_right"
+            android:tint="#88FFFFFF"
+            android:layout_marginEnd="4dp" />
+
+        <!-- Type icon -->
+        <ImageView
+            android:id="@+id/ivTypeIcon"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_marginEnd="8dp" />
+
+        <!-- Text content -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <!-- Label utama -->
+            <TextView
+                android:id="@+id/tvLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFFFF" />
+
+            <!-- Offset -->
+            <TextView
+                android:id="@+id/tvOffset"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="11sp"
+                android:fontFamily="monospace"
+                android:textColor="#FFFF9800"
+                android:layout_marginTop="1dp" />
+
+            <!-- Class name -->
+            <TextView
+                android:id="@+id/tvClass"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="10sp"
+                android:textColor="#88FFFFFF"
+                android:layout_marginTop="1dp" />
+
+            <!-- Extra info -->
+            <TextView
+                android:id="@+id/tvExtra"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="10sp"
+                android:fontFamily="monospace"
+                android:textColor="#6688BBFF"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <!-- Timestamp (kanan) -->
+        <TextView
+            android:id="@+id/tvTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="9sp"
+            android:fontFamily="monospace"
+            android:textColor="#44FFFFFF"
+            android:layout_gravity="top"
+            android:layout_marginTop="2dp" />
+
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,0 +1,354 @@
+<!-- res/layout/activity_main.xml -->
+
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FF0D1117">
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- TOP BAR                                -->
+    <!-- ══════════════════════════════════════ -->
+
+    <LinearLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:background="#FF161B22"
+        android:paddingHorizontal="16dp"
+        android:gravity="center_vertical"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <!-- App title -->
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="VON TRACER"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:fontFamily="monospace"
+            android:textColor="#FF58A6FF"
+            android:letterSpacing="0.2" />
+
+        <!-- Clear button -->
+        <TextView
+            android:id="@+id/btnClear"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CLEAR"
+            android:textSize="11sp"
+            android:fontFamily="monospace"
+            android:textColor="#FF8B949E"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="6dp"
+            android:background="?attr/selectableItemBackground"
+            android:layout_marginEnd="4dp" />
+
+        <!-- Export button -->
+        <TextView
+            android:id="@+id/btnExport"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="EXPORT"
+            android:textSize="11sp"
+            android:fontFamily="monospace"
+            android:textColor="#FF8B949E"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="6dp"
+            android:background="?attr/selectableItemBackground" />
+
+    </LinearLayout>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- STEP PANEL (inject pipeline)           -->
+    <!-- ══════════════════════════════════════ -->
+
+    <LinearLayout
+        android:id="@+id/stepPanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#FF161B22"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp"
+        app:layout_constraintTop_toBottomOf="@id/topBar"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <!-- Step indicators -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="10dp">
+
+            <TextView
+                android:id="@+id/stepInject"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="① INJECT"
+                android:textSize="10sp"
+                android:fontFamily="monospace"
+                android:textColor="#FF3D444D"
+                android:gravity="center" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="→"
+                android:textColor="#FF3D444D"
+                android:textSize="10sp" />
+
+            <TextView
+                android:id="@+id/stepInstall"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="② INSTALL"
+                android:textSize="10sp"
+                android:fontFamily="monospace"
+                android:textColor="#FF3D444D"
+                android:gravity="center" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="→"
+                android:textColor="#FF3D444D"
+                android:textSize="10sp" />
+
+            <TextView
+                android:id="@+id/stepLaunch"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="③ LAUNCH"
+                android:textSize="10sp"
+                android:fontFamily="monospace"
+                android:textColor="#FF3D444D"
+                android:gravity="center" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="→"
+                android:textColor="#FF3D444D"
+                android:textSize="10sp" />
+
+            <TextView
+                android:id="@+id/stepTrace"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="④ TRACE"
+                android:textSize="10sp"
+                android:fontFamily="monospace"
+                android:textColor="#FF3D444D"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+        <!-- APK path row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="#FF0D1117"
+            android:paddingHorizontal="10dp">
+
+            <TextView
+                android:id="@+id/tvApkPath"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="no apk selected"
+                android:textSize="11sp"
+                android:fontFamily="monospace"
+                android:textColor="#FF3D444D"
+                android:singleLine="true"
+                android:ellipsize="start" />
+
+            <TextView
+                android:id="@+id/btnPickApk"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PICK"
+                android:textSize="11sp"
+                android:fontFamily="monospace"
+                android:textColor="#FF58A6FF"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="6dp"
+                android:background="?attr/selectableItemBackground" />
+
+        </LinearLayout>
+
+        <!-- Package name row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="#FF0D1117"
+            android:paddingHorizontal="10dp"
+            android:layout_marginTop="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="pkg:"
+                android:textSize="11sp"
+                android:fontFamily="monospace"
+                android:textColor="#FF3D444D"
+                android:layout_marginEnd="6dp" />
+
+            <EditText
+                android:id="@+id/etPackageName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="com.example.target"
+                android:textSize="11sp"
+                android:fontFamily="monospace"
+                android:textColor="#FFCDD9E5"
+                android:textColorHint="#FF3D444D"
+                android:background="@null"
+                android:inputType="text"
+                android:singleLine="true"
+                android:imeOptions="actionDone" />
+
+        </LinearLayout>
+
+        <!-- Progress text -->
+        <TextView
+            android:id="@+id/tvProgress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="10sp"
+            android:fontFamily="monospace"
+            android:textColor="#FF58A6FF"
+            android:layout_marginTop="8dp"
+            android:minHeight="16dp"
+            android:singleLine="true"
+            android:ellipsize="end" />
+
+    </LinearLayout>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- ACTION BUTTONS ROW                     -->
+    <!-- ══════════════════════════════════════ -->
+
+    <LinearLayout
+        android:id="@+id/actionRow"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:orientation="horizontal"
+        android:background="#FF0D1117"
+        app:layout_constraintTop_toBottomOf="@id/stepPanel"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <!-- INJECT button -->
+        <TextView
+            android:id="@+id/btnInject"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="INJECT"
+            android:gravity="center"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:fontFamily="monospace"
+            android:textColor="#FF8B949E"
+            android:background="?attr/selectableItemBackground" />
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="#FF21262D" />
+
+        <!-- INSTALL button -->
+        <TextView
+            android:id="@+id/btnInstall"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="INSTALL"
+            android:gravity="center"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:fontFamily="monospace"
+            android:textColor="#FF8B949E"
+            android:background="?attr/selectableItemBackground"
+            android:enabled="false" />
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="#FF21262D" />
+
+        <!-- LAUNCH button -->
+        <TextView
+            android:id="@+id/btnLaunch"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="LAUNCH"
+            android:gravity="center"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:fontFamily="monospace"
+            android:textColor="#FF8B949E"
+            android:background="?attr/selectableItemBackground"
+            android:enabled="false" />
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="#FF21262D" />
+
+        <!-- STOP button -->
+        <TextView
+            android:id="@+id/btnStop"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="STOP"
+            android:gravity="center"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:fontFamily="monospace"
+            android:textColor="#FF8B949E"
+            android:background="?attr/selectableItemBackground"
+            android:enabled="false" />
+
+    </LinearLayout>
+
+    <!-- Separator -->
+    <View
+        android:id="@+id/separator"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#FF21262D"
+        app:layout_constraintTop_toBottomOf="@id/actionRow"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- LOG FRAGMENT CONTAINER                 -->
+    <!-- ══════════════════════════════════════ -->
+
+    <FrameLayout
+        android:id="@+id/fragmentContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/separator"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

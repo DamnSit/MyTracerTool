@@ -1,0 +1,14 @@
+<!-- res/xml/network_security_config.xml -->
+
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!--
+        Izinkan cleartext ke localhost saja.
+        Dibutuhkan agar socket ke 127.0.0.1:27043 tidak diblokir
+        oleh network security policy Android.
+    -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
+    </domain-config>
+</network-security-config>

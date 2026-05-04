@@ -1,0 +1,21 @@
+{
+  "allFiles": [
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/java/com/von/tracer/injector/ApkInjector.kt",
+      "selection": {
+        "end": {
+          "column": 1,
+          "index": 7174,
+          "line": 213
+        },
+        "start": {
+          "column": 1,
+          "index": 7174,
+          "line": 213
+        }
+      }
+    }
+  ],
+  "projectPath": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool",
+  "selectedFile": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/java/com/von/tracer/injector/ApkInjector.kt"
+}
