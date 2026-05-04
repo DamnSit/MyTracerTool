@@ -1,6 +1,5 @@
 package com.von.tracer.ui
 
-import android.animation.ObjectAnimator
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup

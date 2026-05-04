@@ -1,36 +1,21 @@
-<!-- app/src/main/AndroidManifest.xml -->
-
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- ══════════════════════════════════════ -->
-    <!-- PERMISSIONS                            -->
-    <!-- ══════════════════════════════════════ -->
-
-    <!-- Untuk socket server (terima data dari gadget) -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- Untuk install APK hasil inject -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
-    <!-- Untuk baca/tulis APK dari storage -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="29" />
 
-    <!-- Android 13+ -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
-    <!-- Untuk push agent.js ke external files -->
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage"
         xmlns:tools="http://schemas.android.com/tools" />
-
-    <!-- ══════════════════════════════════════ -->
-    <!-- APPLICATION                            -->
-    <!-- ══════════════════════════════════════ -->
 
     <application
         android:allowBackup="false"
@@ -42,7 +27,6 @@
         android:requestLegacyExternalStorage="true"
         android:networkSecurityConfig="@xml/network_security_config">
 
-        <!-- Main activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -54,7 +38,6 @@
             </intent-filter>
         </activity>
 
-        <!-- FileProvider untuk share APK hasil inject + export log -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"

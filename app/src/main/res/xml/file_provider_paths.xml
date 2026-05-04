@@ -1,18 +1,10 @@
-<!-- res/xml/file_provider_paths.xml -->
-
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <!-- Work dir injector -->
-    <files-path
-        name="injector_work"
-        path="injector_work/" />
-
-    <!-- Cache dir (APK yang dipilih user) -->
+   
     <cache-path
         name="cache"
         path="." />
 
-    <!-- External files (agent.js + export log) -->
     <external-files-path
         name="external_files"
         path="." />

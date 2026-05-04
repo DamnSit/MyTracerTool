@@ -6,15 +6,13 @@ import java.io.File
 import java.io.FileOutputStream
 import java.security.KeyPairGenerator
 import java.security.KeyStore
+import java.security.MessageDigest
 import java.security.PrivateKey
+import java.security.Signature
 import java.security.cert.X509Certificate
+import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
-import java.util.zip.ZipEntry
-import java.security.Signature
-import java.security.MessageDigest
-import java.util.Base64
-import javax.security.auth.x500.X500Principal
 
 class Signer(
     private val context: Context,
@@ -26,7 +24,6 @@ class Signer(
         private const val KEYSTORE_FILE = "debug.keystore"
         private const val KEY_ALIAS = "von_debug"
         private const val KEY_PASSWORD = "von_tracer"
-        private const val VALIDITY_DAYS = 9125 // 25 tahun
     }
 
     private val keystoreFile = File(context.filesDir, KEYSTORE_FILE)
@@ -35,35 +32,22 @@ class Signer(
     // ZIPALIGN
     // ──────────────────────────────────────────────
 
-    /**
-     * Zipalign memastikan semua uncompressed entry di APK
-     * di-align ke boundary 4 bytes.
-     * Penting agar APK bisa di-install (verifikasi oleh PackageManager).
-     *
-     * Karena kita tidak bisa spawn zipalign binary tanpa root/ADB,
-     * kita implementasi manual via ZipOutputStream dengan pengaturan
-     * alignment di setiap entry.
-     */
     fun zipalign(apkFile: File): File {
         Log.d(TAG, "Zipalign: ${apkFile.name}")
-
         val output = File(workDir, "target_aligned.apk")
 
         ZipFile(apkFile).use { sourceZip ->
             ZipOutputStream(FileOutputStream(output)).use { outZip ->
-                outZip.setLevel(0) // store only untuk uncompressed entries
 
                 sourceZip.entries().asSequence().forEach { entry ->
                     val newEntry = ZipEntry(entry.name)
 
                     if (entry.method == ZipEntry.STORED) {
-                        // Uncompressed entry → harus align ke 4 bytes
                         newEntry.method = ZipEntry.STORED
                         newEntry.size = entry.size
                         newEntry.compressedSize = entry.size
                         newEntry.crc = entry.crc
                     } else {
-                        // Compressed entry → biarkan deflate
                         newEntry.method = ZipEntry.DEFLATED
                     }
 
@@ -82,12 +66,6 @@ class Signer(
     // SIGN
     // ──────────────────────────────────────────────
 
-    /**
-     * Sign APK dengan debug key (v1 JAR signing).
-     * v2/v3 signing butuh apksigner binary — kita skip dulu,
-     * v1 cukup untuk install di kebanyakan device (Android < 11).
-     * Untuk Android 11+ kita tambah v2 signature block sederhana.
-     */
     fun sign(apkFile: File): File {
         Log.d(TAG, "Signing: ${apkFile.name}")
 
@@ -101,6 +79,285 @@ class Signer(
     }
 
     // ──────────────────────────────────────────────
+    // KEY MANAGEMENT — pakai BouncyCastle via SpongyCastle
+    // atau fallback ke JKS keystore generate via keytool-style
+    // ──────────────────────────────────────────────
+
+    private data class KeyPairResult(
+        val privateKey: PrivateKey,
+        val certificate: X509Certificate
+    )
+
+    private fun getOrCreateKeyPair(): KeyPairResult {
+        // Coba load dari keystore yang sudah ada
+        if (keystoreFile.exists()) {
+            try {
+                val result = loadKeyPair()
+                Log.d(TAG, "Loaded existing keypair")
+                return result
+            } catch (e: Exception) {
+                Log.w(TAG, "Load keypair failed, regenerating: ${e.message}")
+                keystoreFile.delete()
+            }
+        }
+        return generateKeyPair()
+    }
+
+    private fun generateKeyPair(): KeyPairResult {
+        Log.d(TAG, "Generating keypair via Android APIs...")
+
+        // Generate RSA keypair
+        val keyGen = KeyPairGenerator.getInstance("RSA")
+        keyGen.initialize(2048)
+        val keyPair = keyGen.generateKeyPair()
+
+        // Generate self-signed cert via sun.security (tersedia di Android)
+        val cert = generateCertViaSunSecurity(keyPair)
+        Log.d(TAG, "Cert generated: ${cert.subjectDN}")
+
+        // Simpan ke PKCS12 keystore
+        saveKeystore(keyPair.private, cert)
+
+        return KeyPairResult(keyPair.private, cert)
+    }
+
+    /**
+     * Generate self-signed X509 cert menggunakan sun.security.x509
+     * yang tersedia di Android runtime (meskipun hidden API).
+     * Ini jauh lebih reliable daripada manual DER encoding.
+     */
+    private fun generateCertViaSunSecurity(
+        keyPair: java.security.KeyPair
+    ): X509Certificate {
+
+        return try {
+            generateViaSunX509(keyPair)
+        } catch (e: Exception) {
+            Log.w(TAG, "sun.security failed: ${e.message}, trying OpenSSL path...")
+            try {
+                generateViaOpenSSLProvider(keyPair)
+            } catch (e2: Exception) {
+                Log.w(TAG, "OpenSSL path failed: ${e2.message}, using minimal DER...")
+                generateViaMinimalDer(keyPair)
+            }
+        }
+    }
+
+    // ── Approach 1: sun.security.x509 reflection ──
+
+    private fun generateViaSunX509(keyPair: java.security.KeyPair): X509Certificate {
+        val now = System.currentTimeMillis()
+        val from = java.util.Date(now - 1000L)
+        val to   = java.util.Date(now + 25L * 365 * 24 * 3600 * 1000)
+
+        // Load semua class via reflection
+        val x500Name       = Class.forName("sun.security.x509.X500Name")
+        val certInfo       = Class.forName("sun.security.x509.X509CertInfo")
+        val certImpl       = Class.forName("sun.security.x509.X509CertImpl")
+        val validity       = Class.forName("sun.security.x509.CertificateValidity")
+        val certKey        = Class.forName("sun.security.x509.CertificateX509Key")
+        val algId          = Class.forName("sun.security.x509.AlgorithmId")
+        val certSerial     = Class.forName("sun.security.x509.CertificateSerialNumber")
+        val certVersion    = Class.forName("sun.security.x509.CertificateVersion")
+        val certAlgId      = Class.forName("sun.security.x509.CertificateAlgorithmId")
+
+        val name = x500Name
+            .getConstructor(String::class.java)
+            .newInstance("CN=VON Tracer, O=VON, C=ID")
+
+        val interval = validity
+            .getConstructor(java.util.Date::class.java, java.util.Date::class.java)
+            .newInstance(from, to)
+
+        val pubKey = certKey
+            .getConstructor(java.security.PublicKey::class.java)
+            .newInstance(keyPair.public)
+
+        val sha256rsa = algId
+            .getMethod("get", String::class.java)
+            .invoke(null, "SHA256withRSA")
+
+        val info = certInfo.newInstance()
+        val setMethod = certInfo.getMethod("set", String::class.java, Any::class.java)
+
+        setMethod.invoke(info, "version",
+            certVersion.newInstance())
+        setMethod.invoke(info, "serialNumber",
+            certSerial.getConstructor(Int::class.java).newInstance(1))
+        setMethod.invoke(info, "algorithmID",
+            certAlgId.getConstructor(algId).newInstance(sha256rsa))
+        setMethod.invoke(info, "subject", name)
+        setMethod.invoke(info, "key", pubKey)
+        setMethod.invoke(info, "validity", interval)
+        setMethod.invoke(info, "issuer", name)
+
+        val cert = certImpl
+            .getConstructor(certInfo)
+            .newInstance(info)
+
+        certImpl
+            .getMethod("sign", PrivateKey::class.java, String::class.java)
+            .invoke(cert, keyPair.private, "SHA256withRSA")
+
+        return cert as X509Certificate
+    }
+
+    // ── Approach 2: Conscrypt / OpenSSL provider ──
+
+    private fun generateViaOpenSSLProvider(keyPair: java.security.KeyPair): X509Certificate {
+        // Android 7+ punya com.android.org.conscrypt
+        // Kita pakai X509V3CertificateGenerator style via reflection
+        val genClass = try {
+            Class.forName("org.bouncycastle.x509.X509V1CertificateGenerator")
+        } catch (e: Exception) {
+            Class.forName("org.spongycastle.x509.X509V1CertificateGenerator")
+        }
+
+        val now  = System.currentTimeMillis()
+        val gen  = genClass.newInstance()
+
+        val bigIntClass = java.math.BigInteger::class.java
+        val dateClass   = java.util.Date::class.java
+        val x500Class   = try {
+            Class.forName("org.bouncycastle.asn1.x500.X500Name")
+        } catch (e: Exception) {
+            Class.forName("org.spongycastle.asn1.x500.X500Name")
+        }
+
+        val dn = x500Class.getConstructor(String::class.java)
+            .newInstance("CN=VON Tracer, O=VON, C=ID")
+
+        genClass.getMethod("setSerialNumber", bigIntClass)
+            .invoke(gen, java.math.BigInteger.ONE)
+        genClass.getMethod("setIssuerDN", x500Class)
+            .invoke(gen, dn)
+        genClass.getMethod("setNotBefore", dateClass)
+            .invoke(gen, java.util.Date(now - 1000L))
+        genClass.getMethod("setNotAfter", dateClass)
+            .invoke(gen, java.util.Date(now + 25L * 365 * 24 * 3600 * 1000))
+        genClass.getMethod("setSubjectDN", x500Class)
+            .invoke(gen, dn)
+        genClass.getMethod("setPublicKey", java.security.PublicKey::class.java)
+            .invoke(gen, keyPair.public)
+        genClass.getMethod("setSignatureAlgorithm", String::class.java)
+            .invoke(gen, "SHA256WithRSAEncryption")
+
+        val cert = genClass.getMethod("generate", PrivateKey::class.java)
+            .invoke(gen, keyPair.private)
+
+        // Convert ke standard X509Certificate
+        val cf = java.security.cert.CertificateFactory.getInstance("X.509")
+        val encoded = (cert as java.security.cert.Certificate).encoded
+        return cf.generateCertificate(encoded.inputStream()) as X509Certificate
+    }
+
+    // ── Approach 3: Minimal DER (diperbaiki) ──
+
+    /**
+     * Build X.509 cert dengan DER encoding yang benar.
+     * Versi ini diperbaiki dari sebelumnya — struktur lebih ketat.
+     */
+    private fun generateViaMinimalDer(keyPair: java.security.KeyPair): X509Certificate {
+        Log.d(TAG, "Building cert via minimal DER...")
+
+        val now     = System.currentTimeMillis()
+        val notBefore = java.util.Date(now - 1000L)
+        val notAfter  = java.util.Date(now + 25L * 365 * 24 * 3600 * 1000)
+
+        // OID SHA256withRSA = 1.2.840.113549.1.1.11
+        val sha256WithRSAOid = byteArrayOf(
+            0x06, 0x09,
+            0x2a, 0x86.toByte(), 0x48, 0x86.toByte(), 0xf7.toByte(),
+            0x0d, 0x01, 0x01, 0x0b
+        )
+        val nullParam = byteArrayOf(0x05, 0x00)
+        val sigAlg = derSeq(sha256WithRSAOid + nullParam)
+
+        // Subject / Issuer DN: CN=VON Tracer
+        val cnOid = byteArrayOf(
+            0x06, 0x03, 0x55, 0x04, 0x03 // OID 2.5.4.3 = commonName
+        )
+        val cnVal = derUtf8("VON Tracer")
+        val dn = derSeq(derSet(derSeq(cnOid + cnVal)))
+
+        // Validity
+        val validity = derSeq(
+            derUtcTime(notBefore) +
+            derUtcTime(notAfter)
+        )
+
+        // SubjectPublicKeyInfo — ambil dari encoded public key
+        val spki = keyPair.public.encoded
+
+        // Serial number
+        val serial = derInt(byteArrayOf(0x01))
+
+        // Version v3 = [0] EXPLICIT INTEGER 2
+        val version = byteArrayOf(
+            0xa0.toByte(), 0x03, 0x02, 0x01, 0x02
+        )
+
+        // TBSCertificate
+        val tbs = derSeq(
+            version +
+            serial +
+            sigAlg +
+            dn +        // issuer
+            validity +
+            dn +        // subject
+            spki
+        )
+
+        // Sign TBS
+        val sig = Signature.getInstance("SHA256withRSA")
+        sig.initSign(keyPair.private)
+        sig.update(tbs)
+        val sigBytes = sig.sign()
+
+        // Full certificate
+        val certDer = derSeq(
+            tbs +
+            sigAlg +
+            derBitStr(sigBytes)
+        )
+
+        Log.d(TAG, "DER cert size: ${certDer.size} bytes")
+
+        val cf = java.security.cert.CertificateFactory.getInstance("X.509")
+        return cf.generateCertificate(certDer.inputStream()) as X509Certificate
+    }
+
+    // ──────────────────────────────────────────────
+    // KEYSTORE SAVE / LOAD
+    // ──────────────────────────────────────────────
+
+    private fun saveKeystore(privateKey: PrivateKey, cert: X509Certificate) {
+        val ks = KeyStore.getInstance("PKCS12")
+        ks.load(null, KEY_PASSWORD.toCharArray())
+        ks.setKeyEntry(
+            KEY_ALIAS,
+            privateKey,
+            KEY_PASSWORD.toCharArray(),
+            arrayOf(cert)
+        )
+        keystoreFile.outputStream().use {
+            ks.store(it, KEY_PASSWORD.toCharArray())
+        }
+        Log.d(TAG, "Keystore saved: ${keystoreFile.absolutePath}")
+    }
+
+    private fun loadKeyPair(): KeyPairResult {
+        val ks = KeyStore.getInstance("PKCS12")
+        keystoreFile.inputStream().use {
+            ks.load(it, KEY_PASSWORD.toCharArray())
+        }
+        val privateKey = ks.getKey(KEY_ALIAS, KEY_PASSWORD.toCharArray()) as PrivateKey
+        val cert = ks.getCertificate(KEY_ALIAS) as X509Certificate
+        Log.d(TAG, "Keypair loaded from keystore")
+        return KeyPairResult(privateKey, cert)
+    }
+
+    // ──────────────────────────────────────────────
     // V1 JAR SIGNING
     // ──────────────────────────────────────────────
 
@@ -110,11 +367,9 @@ class Signer(
         privateKey: PrivateKey,
         certificate: X509Certificate
     ) {
-        // V1 signing = tambah META-INF/MANIFEST.MF + CERT.SF + CERT.RSA
+        val entries = mutableMapOf<String, ByteArray>()
 
-        val entries = mutableMapOf<String, ByteArray>() // entry name → sha256 digest
-
-        // Pass 1: Baca semua entry, hitung digest
+        // Pass 1: digest semua entry
         ZipFile(inputApk).use { zip ->
             zip.entries().asSequence().forEach { entry ->
                 if (entry.name.startsWith("META-INF/")) return@forEach
@@ -124,19 +379,13 @@ class Signer(
             }
         }
 
-        // Build MANIFEST.MF
         val manifest = buildManifest(entries)
+        val certSf   = buildCertSf(manifest)
+        val certRsa  = buildCertRsa(certSf, privateKey, certificate)
 
-        // Build CERT.SF (digest of manifest)
-        val certSf = buildCertSf(manifest)
-
-        // Build CERT.RSA (PKCS7 signature of CERT.SF)
-        val certRsa = buildCertRsa(certSf, privateKey, certificate)
-
-        // Pass 2: Repack dengan META-INF entries baru
+        // Pass 2: repack dengan META-INF baru
         ZipFile(inputApk).use { sourceZip ->
             ZipOutputStream(FileOutputStream(outputApk)).use { outZip ->
-                // Copy semua entry non META-INF
                 sourceZip.entries().asSequence().forEach { entry ->
                     if (entry.name.startsWith("META-INF/")) return@forEach
                     val newEntry = ZipEntry(entry.name)
@@ -151,10 +400,9 @@ class Signer(
                     outZip.closeEntry()
                 }
 
-                // Tambah META-INF entries
-                writeZipEntry(outZip, "META-INF/MANIFEST.MF", manifest)
-                writeZipEntry(outZip, "META-INF/CERT.SF", certSf)
-                writeZipEntry(outZip, "META-INF/CERT.RSA", certRsa)
+                writeEntry(outZip, "META-INF/MANIFEST.MF", manifest)
+                writeEntry(outZip, "META-INF/CERT.SF", certSf)
+                writeEntry(outZip, "META-INF/CERT.RSA", certRsa)
             }
         }
     }
@@ -164,27 +412,23 @@ class Signer(
         sb.append("Manifest-Version: 1.0\r\n")
         sb.append("Created-By: VON Tracer\r\n")
         sb.append("\r\n")
-
         entries.forEach { (name, digest) ->
-            val b64 = Base64.getEncoder().encodeToString(digest)
+            val b64 = android.util.Base64.encodeToString(digest, android.util.Base64.NO_WRAP)
             sb.append("Name: $name\r\n")
             sb.append("SHA-256-Digest: $b64\r\n")
             sb.append("\r\n")
         }
-
         return sb.toString().toByteArray(Charsets.UTF_8)
     }
 
     private fun buildCertSf(manifest: ByteArray): ByteArray {
-        val manifestDigest = MessageDigest.getInstance("SHA-256").digest(manifest)
-        val b64 = Base64.getEncoder().encodeToString(manifestDigest)
-
+        val digest = MessageDigest.getInstance("SHA-256").digest(manifest)
+        val b64 = android.util.Base64.encodeToString(digest, android.util.Base64.NO_WRAP)
         val sb = StringBuilder()
         sb.append("Signature-Version: 1.0\r\n")
         sb.append("Created-By: VON Tracer\r\n")
         sb.append("SHA-256-Digest-Manifest: $b64\r\n")
         sb.append("\r\n")
-
         return sb.toString().toByteArray(Charsets.UTF_8)
     }
 
@@ -193,292 +437,133 @@ class Signer(
         privateKey: PrivateKey,
         certificate: X509Certificate
     ): ByteArray {
-        // Sign CERT.SF dengan SHA256withRSA
         val sig = Signature.getInstance("SHA256withRSA")
         sig.initSign(privateKey)
         sig.update(certSf)
         val sigBytes = sig.sign()
-
-        // Encode sebagai minimal PKCS7 DER structure
         return buildPkcs7(sigBytes, certificate)
     }
 
-    /**
-     * Build minimal PKCS7 SignedData untuk v1 APK signing.
-     * Ini adalah subset dari full PKCS7 — cukup untuk PackageManager.
-     */
     private fun buildPkcs7(signature: ByteArray, cert: X509Certificate): ByteArray {
         val certBytes = cert.encoded
 
-        // PKCS7 ContentInfo wrapper
-        // OID 1.2.840.113549.1.7.2 = signedData
-        val oid = byteArrayOf(
-            0x06, 0x09, 0x2a, 0x86.toByte(), 0x48, 0x86.toByte(),
-            0xf7.toByte(), 0x0d, 0x01, 0x07, 0x02
+        // OID 1.2.840.113549.1.7.2 = pkcs7-signedData
+        val contentTypeOid = byteArrayOf(
+            0x06, 0x09,
+            0x2a, 0x86.toByte(), 0x48, 0x86.toByte(), 0xf7.toByte(),
+            0x0d, 0x01, 0x07, 0x02
         )
 
-        // SignerInfo minimal
-        val signerInfo = buildSignerInfo(signature, cert)
-
-        // Build SignedData
-        val signedData = buildDerSequence(
-            buildDerInteger(1) +                          // version
-            buildDerSet(buildDerSequence(               // digestAlgorithms
-                byteArrayOf(0x06, 0x09) +               // OID SHA-256
-                byteArrayOf(0x60, 0x86.toByte(), 0x48, 0x86.toByte(),
-                    0xf7.toByte(), 0x0d, 0x01, 0x01, 0x0b) +
-                byteArrayOf(0x05, 0x00)                 // NULL
-            )) +
-            buildDerSequence(byteArrayOf(0x06, 0x09,   // contentType = data
-                0x2a, 0x86.toByte(), 0x48, 0x86.toByte(),
-                0xf7.toByte(), 0x0d, 0x01, 0x07, 0x01)) +
-            buildDerContextSpec(0, certBytes) +         // certificates
-            buildDerSet(signerInfo)                     // signerInfos
+        // OID SHA-256 = 2.16.840.1.101.3.4.2.1
+        val sha256Oid = byteArrayOf(
+            0x06, 0x09,
+            0x60, 0x86.toByte(), 0x48, 0x01, 0x65,
+            0x03, 0x04, 0x02, 0x01
         )
 
-        return buildDerSequence(oid + buildDerContextSpec(0, signedData))
-    }
+        // OID RSA = 1.2.840.113549.1.1.1
+        val rsaOid = byteArrayOf(
+            0x06, 0x09,
+            0x2a, 0x86.toByte(), 0x48, 0x86.toByte(), 0xf7.toByte(),
+            0x0d, 0x01, 0x01, 0x01
+        )
 
-    private fun buildSignerInfo(signature: ByteArray, cert: X509Certificate): ByteArray {
-        val issuer = cert.issuerX500Principal.encoded
-        val serial = cert.serialNumber.toByteArray()
+        // OID pkcs7-data = 1.2.840.113549.1.7.1
+        val dataOid = byteArrayOf(
+            0x06, 0x09,
+            0x2a, 0x86.toByte(), 0x48, 0x86.toByte(), 0xf7.toByte(),
+            0x0d, 0x01, 0x07, 0x01
+        )
 
-        return buildDerSequence(
-            buildDerInteger(1) +                        // version
-            buildDerSequence(issuer + buildDerInteger(serial.first().toInt())) + // issuerAndSerial
-            buildDerSequence(                           // digestAlgorithm SHA-256
-                byteArrayOf(0x06, 0x09, 0x60, 0x86.toByte(), 0x48,
-                    0x86.toByte(), 0xf7.toByte(), 0x0d, 0x01, 0x01, 0x0b,
-                    0x05, 0x00)
-            ) +
-            buildDerSequence(                           // signatureAlgorithm RSA
-                byteArrayOf(0x06, 0x09, 0x2a, 0x86.toByte(), 0x48,
-                    0x86.toByte(), 0xf7.toByte(), 0x0d, 0x01, 0x01, 0x01,
-                    0x05, 0x00)
-            ) +
-            buildDerOctetString(signature)              // signature bytes
+        // Issuer serial dari cert
+        val issuerBytes  = cert.issuerX500Principal.encoded
+        val serialBytes  = cert.serialNumber.toByteArray().let { b ->
+            // Pastikan tidak ada leading zero yang tidak perlu
+            if (b.size > 1 && b[0] == 0.toByte()) b.drop(1).toByteArray() else b
+        }
+
+        val issuerAndSerial = derSeq(issuerBytes + derInt(serialBytes))
+
+        val signerInfo = derSeq(
+            derInt(byteArrayOf(0x01)) +                   // version = 1
+            issuerAndSerial +
+            derSeq(sha256Oid + nullBytes()) +              // digestAlgorithm
+            derSeq(rsaOid + nullBytes()) +                 // signatureAlgorithm
+            derOctetStr(signature)                         // signature
+        )
+
+        val signedData = derSeq(
+            derInt(byteArrayOf(0x01)) +                   // version
+            derSet(derSeq(sha256Oid + nullBytes())) +      // digestAlgorithms
+            derSeq(dataOid) +                              // encapContentInfo
+            derContextImplicit(0, certBytes) +             // certificates [0]
+            derSet(signerInfo)                             // signerInfos
+        )
+
+        return derSeq(
+            contentTypeOid +
+            derContextExplicit(0, signedData)
         )
     }
 
     // ──────────────────────────────────────────────
-    // KEY MANAGEMENT
+    // DER HELPERS — versi clean & benar
     // ──────────────────────────────────────────────
 
-    private data class KeyPairResult(
-        val privateKey: PrivateKey,
-        val certificate: X509Certificate
-    )
-
-    private fun getOrCreateKeyPair(): KeyPairResult {
-        if (keystoreFile.exists()) {
-            return loadKeyPair()
-        }
-        return generateKeyPair()
-    }
-
-    private fun generateKeyPair(): KeyPairResult {
-        Log.d(TAG, "Generating debug keypair...")
-
-        val keyGen = KeyPairGenerator.getInstance("RSA")
-        keyGen.initialize(2048)
-        val keyPair = keyGen.generateKeyPair()
-
-        // Self-signed certificate
-        val cert = generateSelfSignedCert(keyPair)
-
-        // Simpan ke keystore
-        val ks = KeyStore.getInstance("PKCS12")
-        ks.load(null, KEY_PASSWORD.toCharArray())
-        ks.setKeyEntry(
-            KEY_ALIAS,
-            keyPair.private,
-            KEY_PASSWORD.toCharArray(),
-            arrayOf(cert)
-        )
-        keystoreFile.outputStream().use {
-            ks.store(it, KEY_PASSWORD.toCharArray())
-        }
-
-        Log.d(TAG, "Debug keypair generated & saved")
-        return KeyPairResult(keyPair.private, cert)
-    }
-
-    private fun loadKeyPair(): KeyPairResult {
-        val ks = KeyStore.getInstance("PKCS12")
-        keystoreFile.inputStream().use {
-            ks.load(it, KEY_PASSWORD.toCharArray())
-        }
-        val privateKey = ks.getKey(KEY_ALIAS, KEY_PASSWORD.toCharArray()) as PrivateKey
-        val cert = ks.getCertificate(KEY_ALIAS) as X509Certificate
-        return KeyPairResult(privateKey, cert)
-    }
-
-    private fun generateSelfSignedCert(keyPair: java.security.KeyPair): X509Certificate {
-        // Gunakan BouncyCastle-lite approach via Android internal
-        // Android punya sun.security.x509 tersembunyi, kita pakai reflection minimal
-        return try {
-            val certClass = Class.forName("sun.security.x509.X509CertImpl")
-            val infoClass = Class.forName("sun.security.x509.X509CertInfo")
-            val intervalClass = Class.forName("sun.security.x509.CertificateValidity")
-            val x500Class = Class.forName("sun.security.x509.X500Name")
-            val keyClass = Class.forName("sun.security.x509.CertificateX509Key")
-            val algClass = Class.forName("sun.security.x509.AlgorithmId")
-            val serialClass = Class.forName("sun.security.x509.CertificateSerialNumber")
-            val versionClass = Class.forName("sun.security.x509.CertificateVersion")
-
-            val now = System.currentTimeMillis()
-            val from = java.util.Date(now)
-            val to = java.util.Date(now + VALIDITY_DAYS.toLong() * 86400000L)
-            val interval = intervalClass.getConstructor(java.util.Date::class.java, java.util.Date::class.java)
-                .newInstance(from, to)
-
-            val owner = x500Class.getConstructor(String::class.java)
-                .newInstance("CN=VON Tracer Debug, O=VON, C=ID")
-
-            val info = infoClass.newInstance()
-            val setMethod = infoClass.getMethod("set", String::class.java, Any::class.java)
-
-            setMethod.invoke(info, "validity", interval)
-            setMethod.invoke(info, "subject", owner)
-            setMethod.invoke(info, "issuer", owner)
-            setMethod.invoke(info, "key", keyClass.getConstructor(java.security.PublicKey::class.java).newInstance(keyPair.public))
-            setMethod.invoke(info, "serialNumber", serialClass.getConstructor(Int::class.java).newInstance(1))
-            setMethod.invoke(info, "version", versionClass.newInstance())
-
-            val algId = algClass.getMethod("get", String::class.java).invoke(null, "SHA256withRSA")
-            setMethod.invoke(info, "algorithmID", algId)
-
-            val cert = certClass.getConstructor(infoClass).newInstance(info)
-            certClass.getMethod("sign", PrivateKey::class.java, String::class.java)
-                .invoke(cert, keyPair.private, "SHA256withRSA")
-
-            cert as X509Certificate
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Reflection cert gen failed, using fallback", e)
-            generateCertFallback(keyPair)
-        }
-    }
-
-    /**
-     * Fallback: generate minimal self-signed cert via DER encoding manual.
-     * Dipakai kalau reflection ke sun.security gagal.
-     */
-    private fun generateCertFallback(keyPair: java.security.KeyPair): X509Certificate {
-        // Encode public key info
-        val pubKeyBytes = keyPair.public.encoded
-        val now = System.currentTimeMillis()
-        val notBefore = java.util.Date(now)
-        val notAfter = java.util.Date(now + VALIDITY_DAYS.toLong() * 86400000L)
-
-        // Build TBS (To Be Signed) certificate
-        val tbs = buildTbsCertificate(pubKeyBytes, notBefore, notAfter)
-
-        // Sign TBS
-        val sig = Signature.getInstance("SHA256withRSA")
-        sig.initSign(keyPair.private)
-        sig.update(tbs)
-        val sigBytes = sig.sign()
-
-        // Build full certificate DER
-        val certDer = buildDerSequence(
-            tbs +
-            buildDerSequence(
-                byteArrayOf(0x06, 0x09, 0x2a, 0x86.toByte(), 0x48,
-                    0x86.toByte(), 0xf7.toByte(), 0x0d, 0x01, 0x01, 0x0b,
-                    0x05, 0x00)
-            ) +
-            buildDerBitString(sigBytes)
-        )
-
-        val cf = java.security.cert.CertificateFactory.getInstance("X.509")
-        return cf.generateCertificate(certDer.inputStream()) as X509Certificate
-    }
-
-    private fun buildTbsCertificate(
-        pubKey: ByteArray,
-        notBefore: java.util.Date,
-        notAfter: java.util.Date
-    ): ByteArray {
-        val subject = byteArrayOf( // CN=VON Debug minimal DER
-            0x30, 0x1c, 0x31, 0x1a, 0x30, 0x18, 0x06, 0x03,
-            0x55, 0x04, 0x03, 0x0c, 0x11
-        ) + "VON Tracer Debug".toByteArray()
-
-        return buildDerSequence(
-            buildDerContextSpec(0, buildDerInteger(2)) +   // version v3
-            buildDerInteger(1) +                            // serial
-            buildDerSequence(                               // signature alg
-                byteArrayOf(0x06, 0x09, 0x2a, 0x86.toByte(), 0x48,
-                    0x86.toByte(), 0xf7.toByte(), 0x0d, 0x01, 0x01, 0x0b,
-                    0x05, 0x00)
-            ) +
-            subject +                                       // issuer
-            buildDerSequence(                               // validity
-                buildDerUtcTime(notBefore) +
-                buildDerUtcTime(notAfter)
-            ) +
-            subject +                                       // subject
-            pubKey                                          // subjectPublicKeyInfo
-        )
-    }
-
-    // ──────────────────────────────────────────────
-    // DER ENCODING HELPERS
-    // ──────────────────────────────────────────────
-
-    private fun buildDerSequence(content: ByteArray): ByteArray =
-        byteArrayOf(0x30) + derLength(content.size) + content
-
-    private fun buildDerSet(content: ByteArray): ByteArray =
-        byteArrayOf(0x31) + derLength(content.size) + content
-
-    private fun buildDerInteger(value: Int): ByteArray {
-        val bytes = byteArrayOf((value and 0xFF).toByte())
-        return byteArrayOf(0x02) + derLength(bytes.size) + bytes
-    }
-
-    private fun buildDerInteger(bytes: ByteArray): ByteArray =
-        byteArrayOf(0x02) + derLength(bytes.size) + bytes
-
-    private fun buildDerOctetString(content: ByteArray): ByteArray =
-        byteArrayOf(0x04) + derLength(content.size) + content
-
-    private fun buildDerBitString(content: ByteArray): ByteArray =
-        byteArrayOf(0x03) + derLength(content.size + 1) + byteArrayOf(0x00) + content
-
-    private fun buildDerContextSpec(tag: Int, content: ByteArray): ByteArray =
-        byteArrayOf((0xA0 or tag).toByte()) + derLength(content.size) + content
-
-    private fun buildDerUtcTime(date: java.util.Date): ByteArray {
-        val fmt = java.text.SimpleDateFormat("yyMMddHHmmss'Z'", java.util.Locale.US)
-        fmt.timeZone = java.util.TimeZone.getTimeZone("UTC")
-        val str = fmt.format(date).toByteArray()
-        return byteArrayOf(0x17) + derLength(str.size) + str
-    }
-
-    private fun derLength(len: Int): ByteArray = when {
+    private fun derLen(len: Int): ByteArray = when {
         len < 0x80 -> byteArrayOf(len.toByte())
         len < 0x100 -> byteArrayOf(0x81.toByte(), len.toByte())
-        else -> byteArrayOf(
+        len < 0x10000 -> byteArrayOf(
             0x82.toByte(),
+            ((len shr 8) and 0xFF).toByte(),
+            (len and 0xFF).toByte()
+        )
+        else -> byteArrayOf(
+            0x83.toByte(),
+            ((len shr 16) and 0xFF).toByte(),
             ((len shr 8) and 0xFF).toByte(),
             (len and 0xFF).toByte()
         )
     }
 
-    private operator fun ByteArray.plus(other: ByteArray): ByteArray {
-        val result = ByteArray(size + other.size)
-        copyInto(result)
-        other.copyInto(result, size)
-        return result
+    private fun derTag(tag: Byte, content: ByteArray) =
+        byteArrayOf(tag) + derLen(content.size) + content
+
+    private fun derSeq(content: ByteArray)     = derTag(0x30, content)
+    private fun derSet(content: ByteArray)     = derTag(0x31, content)
+    private fun derOctetStr(content: ByteArray) = derTag(0x04, content)
+    private fun derBitStr(content: ByteArray)  = derTag(0x03, byteArrayOf(0x00) + content)
+    private fun derUtf8(s: String)             = derTag(0x0c, s.toByteArray(Charsets.UTF_8))
+    private fun nullBytes()                    = byteArrayOf(0x05, 0x00)
+
+    private fun derInt(bytes: ByteArray): ByteArray {
+        // Pastikan integer tidak negatif (prepend 0x00 jika MSB set)
+        val b = if (bytes.isNotEmpty() && bytes[0].toInt() and 0x80 != 0) {
+            byteArrayOf(0x00) + bytes
+        } else bytes
+        return derTag(0x02, b)
     }
 
-    // ──────────────────────────────────────────────
-    // ZIP HELPER
-    // ──────────────────────────────────────────────
+    private fun derContextExplicit(tag: Int, content: ByteArray) =
+        byteArrayOf((0xA0 or tag).toByte()) + derLen(content.size) + content
 
-    private fun writeZipEntry(zip: ZipOutputStream, name: String, data: ByteArray) {
+    private fun derContextImplicit(tag: Int, content: ByteArray) =
+        byteArrayOf((0xA0 or tag).toByte()) + derLen(content.size) + content
+
+    private fun derUtcTime(date: java.util.Date): ByteArray {
+        val fmt = java.text.SimpleDateFormat("yyMMddHHmmss'Z'", java.util.Locale.US)
+        fmt.timeZone = java.util.TimeZone.getTimeZone("UTC")
+        return derTag(0x17, fmt.format(date).toByteArray(Charsets.US_ASCII))
+    }
+
+    private operator fun ByteArray.plus(other: ByteArray): ByteArray {
+        val out = ByteArray(size + other.size)
+        copyInto(out)
+        other.copyInto(out, size)
+        return out
+    }
+
+    private fun writeEntry(zip: ZipOutputStream, name: String, data: ByteArray) {
         zip.putNextEntry(ZipEntry(name))
         zip.write(data)
         zip.closeEntry()

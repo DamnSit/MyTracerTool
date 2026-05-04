@@ -1,5 +1,3 @@
-<!-- res/layout/activity_main.xml -->
-
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -7,10 +5,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FF0D1117">
-
-    <!-- ══════════════════════════════════════ -->
-    <!-- TOP BAR                                -->
-    <!-- ══════════════════════════════════════ -->
 
     <LinearLayout
         android:id="@+id/topBar"
@@ -23,7 +17,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <!-- App title -->
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -35,7 +28,6 @@
             android:textColor="#FF58A6FF"
             android:letterSpacing="0.2" />
 
-        <!-- Clear button -->
         <TextView
             android:id="@+id/btnClear"
             android:layout_width="wrap_content"
@@ -49,7 +41,6 @@
             android:background="?attr/selectableItemBackground"
             android:layout_marginEnd="4dp" />
 
-        <!-- Export button -->
         <TextView
             android:id="@+id/btnExport"
             android:layout_width="wrap_content"
@@ -64,10 +55,6 @@
 
     </LinearLayout>
 
-    <!-- ══════════════════════════════════════ -->
-    <!-- STEP PANEL (inject pipeline)           -->
-    <!-- ══════════════════════════════════════ -->
-
     <LinearLayout
         android:id="@+id/stepPanel"
         android:layout_width="match_parent"
@@ -79,7 +66,6 @@
         app:layout_constraintTop_toBottomOf="@id/topBar"
         app:layout_constraintStart_toStartOf="parent">
 
-        <!-- Step indicators -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -154,7 +140,6 @@
 
         </LinearLayout>
 
-        <!-- APK path row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="36dp"
@@ -189,7 +174,6 @@
 
         </LinearLayout>
 
-        <!-- Package name row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="36dp"
@@ -225,7 +209,6 @@
 
         </LinearLayout>
 
-        <!-- Progress text -->
         <TextView
             android:id="@+id/tvProgress"
             android:layout_width="match_parent"
@@ -241,10 +224,6 @@
 
     </LinearLayout>
 
-    <!-- ══════════════════════════════════════ -->
-    <!-- ACTION BUTTONS ROW                     -->
-    <!-- ══════════════════════════════════════ -->
-
     <LinearLayout
         android:id="@+id/actionRow"
         android:layout_width="match_parent"
@@ -254,7 +233,6 @@
         app:layout_constraintTop_toBottomOf="@id/stepPanel"
         app:layout_constraintStart_toStartOf="parent">
 
-        <!-- INJECT button -->
         <TextView
             android:id="@+id/btnInject"
             android:layout_width="0dp"
@@ -273,7 +251,6 @@
             android:layout_height="match_parent"
             android:background="#FF21262D" />
 
-        <!-- INSTALL button -->
         <TextView
             android:id="@+id/btnInstall"
             android:layout_width="0dp"
@@ -293,7 +270,6 @@
             android:layout_height="match_parent"
             android:background="#FF21262D" />
 
-        <!-- LAUNCH button -->
         <TextView
             android:id="@+id/btnLaunch"
             android:layout_width="0dp"
@@ -313,7 +289,6 @@
             android:layout_height="match_parent"
             android:background="#FF21262D" />
 
-        <!-- STOP button -->
         <TextView
             android:id="@+id/btnStop"
             android:layout_width="0dp"
@@ -330,7 +305,6 @@
 
     </LinearLayout>
 
-    <!-- Separator -->
     <View
         android:id="@+id/separator"
         android:layout_width="match_parent"
@@ -338,10 +312,6 @@
         android:background="#FF21262D"
         app:layout_constraintTop_toBottomOf="@id/actionRow"
         app:layout_constraintStart_toStartOf="parent" />
-
-    <!-- ══════════════════════════════════════ -->
-    <!-- LOG FRAGMENT CONTAINER                 -->
-    <!-- ══════════════════════════════════════ -->
 
     <FrameLayout
         android:id="@+id/fragmentContainer"

@@ -1,0 +1,291 @@
+{
+  "allFiles": [
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/java/com/von/tracer/ui/TraceTreeAdapter.kt",
+      "selection": {
+        "end": {
+          "column": 0,
+          "index": 26,
+          "line": 1
+        },
+        "start": {
+          "column": 0,
+          "index": 26,
+          "line": 1
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/res/xml/network_security_config.xml",
+      "selection": {
+        "end": {
+          "column": 26,
+          "index": 287,
+          "line": 6
+        },
+        "start": {
+          "column": 26,
+          "index": 287,
+          "line": 6
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/res/layout/fragment_log.xml",
+      "selection": {
+        "end": {
+          "column": 27,
+          "index": 3588,
+          "line": 97
+        },
+        "start": {
+          "column": 27,
+          "index": 3588,
+          "line": 97
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/res/values/themes.xml",
+      "selection": {
+        "end": {
+          "column": 4,
+          "index": 140,
+          "line": 2
+        },
+        "start": {
+          "column": 4,
+          "index": 140,
+          "line": 2
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/res/drawable/bg_node_child.xml",
+      "selection": {
+        "end": {
+          "column": 0,
+          "index": 0,
+          "line": 0
+        },
+        "start": {
+          "column": 0,
+          "index": 0,
+          "line": 0
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/res/drawable/ic_iap.xml",
+      "selection": {
+        "end": {
+          "column": 4,
+          "index": 4,
+          "line": 0
+        },
+        "start": {
+          "column": 0,
+          "index": 0,
+          "line": 0
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/res/xml/data_extraction_rules.xml",
+      "selection": {
+        "end": {
+          "column": 2,
+          "index": 105,
+          "line": 5
+        },
+        "start": {
+          "column": 2,
+          "index": 105,
+          "line": 5
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/res/drawable/ic_click.xml",
+      "selection": {
+        "end": {
+          "column": 0,
+          "index": 0,
+          "line": 0
+        },
+        "start": {
+          "column": 0,
+          "index": 0,
+          "line": 0
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/res/drawable/ic_method.xml",
+      "selection": {
+        "end": {
+          "column": 0,
+          "index": 0,
+          "line": 0
+        },
+        "start": {
+          "column": 0,
+          "index": 0,
+          "line": 0
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/res/xml/file_provider_paths.xml",
+      "selection": {
+        "end": {
+          "column": 0,
+          "index": 108,
+          "line": 6
+        },
+        "start": {
+          "column": 0,
+          "index": 108,
+          "line": 6
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/res/layout/activity_main.xml",
+      "selection": {
+        "end": {
+          "column": 56,
+          "index": 11459,
+          "line": 313
+        },
+        "start": {
+          "column": 56,
+          "index": 11459,
+          "line": 313
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/res/layout/item_trace_node.xml",
+      "selection": {
+        "end": {
+          "column": 0,
+          "index": 2851,
+          "line": 81
+        },
+        "start": {
+          "column": 0,
+          "index": 2851,
+          "line": 81
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/AndroidManifest.xml",
+      "selection": {
+        "end": {
+          "column": 0,
+          "index": 1659,
+          "line": 39
+        },
+        "start": {
+          "column": 0,
+          "index": 1659,
+          "line": 39
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/res/values-night/themes.xml",
+      "selection": {
+        "end": {
+          "column": 4,
+          "index": 143,
+          "line": 3
+        },
+        "start": {
+          "column": 4,
+          "index": 143,
+          "line": 3
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/res/drawable/ic_touch.xml",
+      "selection": {
+        "end": {
+          "column": 0,
+          "index": 0,
+          "line": 0
+        },
+        "start": {
+          "column": 0,
+          "index": 0,
+          "line": 0
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/res/drawable/bg_node_root.xml",
+      "selection": {
+        "end": {
+          "column": 8,
+          "index": 191,
+          "line": 4
+        },
+        "start": {
+          "column": 8,
+          "index": 191,
+          "line": 4
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/res/drawable/ic_native.xml",
+      "selection": {
+        "end": {
+          "column": 0,
+          "index": 0,
+          "line": 0
+        },
+        "start": {
+          "column": 0,
+          "index": 0,
+          "line": 0
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/res/drawable/ic_expand_more.xml",
+      "selection": {
+        "end": {
+          "column": 0,
+          "index": 0,
+          "line": 0
+        },
+        "start": {
+          "column": 0,
+          "index": 0,
+          "line": 0
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/res/drawable/ic_chevron_right.xml",
+      "selection": {
+        "end": {
+          "column": 0,
+          "index": 0,
+          "line": 0
+        },
+        "start": {
+          "column": 0,
+          "index": 0,
+          "line": 0
+        }
+      }
+    }
+  ],
+  "projectPath": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool",
+  "selectedFile": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/res/drawable/ic_chevron_right.xml"
+}
