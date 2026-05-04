@@ -36,13 +36,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvProgress: TextView
     private lateinit var btnPickApk: TextView
     private lateinit var btnInject: TextView
-    private lateinit var btnInstall: TextView
+    private lateinit var btnSave: TextView
     private lateinit var btnLaunch: TextView
     private lateinit var btnStop: TextView
     private lateinit var btnClear: TextView
     private lateinit var btnExport: TextView
     private lateinit var stepInject: TextView
-    private lateinit var stepInstall: TextView
+    private lateinit var stepSave: TextView
     private lateinit var stepLaunch: TextView
     private lateinit var stepTrace: TextView
 
@@ -100,13 +100,13 @@ class MainActivity : AppCompatActivity() {
         tvProgress    = findViewById(R.id.tvProgress)
         btnPickApk    = findViewById(R.id.btnPickApk)
         btnInject     = findViewById(R.id.btnInject)
-        btnInstall    = findViewById(R.id.btnInstall)
+        btnSave    = findViewById(R.id.btnSave)
         btnLaunch     = findViewById(R.id.btnLaunch)
         btnStop       = findViewById(R.id.btnStop)
         btnClear      = findViewById(R.id.btnClear)
         btnExport     = findViewById(R.id.btnExport)
         stepInject    = findViewById(R.id.stepInject)
-        stepInstall   = findViewById(R.id.stepInstall)
+        stepSave   = findViewById(R.id.stepSave)
         stepLaunch    = findViewById(R.id.stepLaunch)
         stepTrace     = findViewById(R.id.stepTrace)
     }
@@ -158,8 +158,8 @@ class MainActivity : AppCompatActivity() {
             startInject()
         }
 
-        btnInstall.setOnClickListener {
-            startInstall()
+        btnSave.setOnClickListener {
+            startSaveApk()
         }
 
         btnLaunch.setOnClickListener {
@@ -282,8 +282,8 @@ class MainActivity : AppCompatActivity() {
                     progress("✓ Inject selesai → ${result.name}")
                     setButtonState(PipelineState.INJECTED)
                     setStepDone(stepInject)
-                    setStepActive(stepInstall)
-                    toast("Inject berhasil, siap install")
+                    setStepActive(stepSave)
+                    toast("Inject berhasil, siap save APK")
                 } else {
                     showError("Inject gagal, cek log")
                     setButtonState(PipelineState.APK_SELECTED)
@@ -293,28 +293,51 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun startInstall() {
-        val apk = injectedApkFile
-        if (apk == null || !apk.exists()) {
-            showError("APK hasil inject tidak ditemukan")
-            return
-        }
+    private fun startSaveApk() {
+    val apk = injectedApkFile
+    if (apk == null || !apk.exists()) {
+        showError("APK hasil inject tidak ditemukan")
+        return
+    }
 
-        setButtonState(PipelineState.INSTALLING)
-        progress("Membuka dialog install...")
+    setButtonState(PipelineState.INSTALLING)
+    progress("Menyimpan APK ke Downloads/VonTracer/...")
 
-        apkInjector.install(apk)
+    scope.launch(Dispatchers.IO) {
+        val savedFile = apkInjector.saveApk(apk)
 
-        // Tidak bisa tahu kapan user selesai install (async)
-        // Kita enable LAUNCH setelah delay singkat + cek manual
-        scope.launch {
-            delay(2000)
-            setButtonState(PipelineState.INSTALLED)
-            setStepDone(stepInstall)
-            setStepActive(stepLaunch)
-            progress("Setelah install selesai, tekan LAUNCH")
+        withContext(Dispatchers.Main) {
+            if (savedFile != null) {
+                setButtonState(PipelineState.INSTALLED)
+                setStepDone(stepSave)
+                setStepActive(stepLaunch)
+                progress("✓ APK disimpan → ${savedFile.name}")
+                toast("Saved: Downloads/VonTracer/${savedFile.name}")
+
+                // Tawarkan buka folder via intent
+                openDownloadFolder()
+            } else {
+                showError("Gagal simpan APK")
+                setButtonState(PipelineState.INJECTED)
+            }
         }
     }
+}
+
+private fun openDownloadFolder() {
+    try {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(
+                Uri.parse("content://com.android.externalstorage.documents/document/primary:Downloads/VonTracer"),
+                "resource/folder"
+            )
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        startActivity(intent)
+    } catch (e: Exception) {
+    toast("APK sudah disimpan di Downloads/VonTracer")
+   }
+}
 
     private fun startLaunch() {
         val packageName = etPackageName.text.toString().trim()
@@ -435,62 +458,62 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setButtonState(state: PipelineState) {
-        val activeColor  = 0xFF58A6FF.toInt()
-        val inactiveColor = 0xFF3D444D.toInt()
-        val dangerColor  = 0xFFF85149.toInt()
-        val successColor = 0xFF3FB950.toInt()
+    val activeColor   = 0xFF58A6FF.toInt()
+    val inactiveColor = 0xFF3D444D.toInt()
+    val dangerColor   = 0xFFF85149.toInt()
+    val successColor  = 0xFF3FB950.toInt()
 
-        when (state) {
-            PipelineState.IDLE -> {
-                setBtn(btnInject,  true,  inactiveColor, "INJECT")
-                setBtn(btnInstall, false, inactiveColor, "INSTALL")
-                setBtn(btnLaunch,  false, inactiveColor, "LAUNCH")
-                setBtn(btnStop,    false, inactiveColor, "STOP")
-            }
-            PipelineState.APK_SELECTED -> {
-                setBtn(btnInject,  true,  activeColor,   "INJECT")
-                setBtn(btnInstall, false, inactiveColor, "INSTALL")
-                setBtn(btnLaunch,  false, inactiveColor, "LAUNCH")
-                setBtn(btnStop,    false, inactiveColor, "STOP")
-            }
-            PipelineState.INJECTING -> {
-                setBtn(btnInject,  false, inactiveColor, "INJECT...")
-                setBtn(btnInstall, false, inactiveColor, "INSTALL")
-                setBtn(btnLaunch,  false, inactiveColor, "LAUNCH")
-                setBtn(btnStop,    false, inactiveColor, "STOP")
-            }
-            PipelineState.INJECTED -> {
-                setBtn(btnInject,  true,  successColor,  "INJECT ✓")
-                setBtn(btnInstall, true,  activeColor,   "INSTALL")
-                setBtn(btnLaunch,  false, inactiveColor, "LAUNCH")
-                setBtn(btnStop,    false, inactiveColor, "STOP")
-            }
-            PipelineState.INSTALLING -> {
-                setBtn(btnInject,  true,  successColor,  "INJECT ✓")
-                setBtn(btnInstall, false, inactiveColor, "INSTALL...")
-                setBtn(btnLaunch,  false, inactiveColor, "LAUNCH")
-                setBtn(btnStop,    false, inactiveColor, "STOP")
-            }
-            PipelineState.INSTALLED -> {
-                setBtn(btnInject,  true,  successColor,  "INJECT ✓")
-                setBtn(btnInstall, true,  successColor,  "INSTALL ✓")
-                setBtn(btnLaunch,  true,  activeColor,   "LAUNCH")
-                setBtn(btnStop,    false, inactiveColor, "STOP")
-            }
-            PipelineState.LAUNCHING -> {
-                setBtn(btnInject,  true,  successColor,  "INJECT ✓")
-                setBtn(btnInstall, true,  successColor,  "INSTALL ✓")
-                setBtn(btnLaunch,  false, inactiveColor, "LAUNCH...")
-                setBtn(btnStop,    false, inactiveColor, "STOP")
-            }
-            PipelineState.TRACING -> {
-                setBtn(btnInject,  true,  successColor,  "INJECT ✓")
-                setBtn(btnInstall, true,  successColor,  "INSTALL ✓")
-                setBtn(btnLaunch,  true,  successColor,  "LAUNCH ✓")
-                setBtn(btnStop,    true,  dangerColor,   "STOP")
-            }
+    when (state) {
+        PipelineState.IDLE -> {
+            setBtn(btnInject,  true,  inactiveColor, "INJECT")
+            setBtn(btnSave, false, inactiveColor, "SAVE APK")
+            setBtn(btnLaunch,  false, inactiveColor, "LAUNCH")
+            setBtn(btnStop,    false, inactiveColor, "STOP")
+        }
+        PipelineState.APK_SELECTED -> {
+            setBtn(btnInject,  true,  activeColor,   "INJECT")
+            setBtn(btnSave, false, inactiveColor, "SAVE APK")
+            setBtn(btnLaunch,  false, inactiveColor, "LAUNCH")
+            setBtn(btnStop,    false, inactiveColor, "STOP")
+        }
+        PipelineState.INJECTING -> {
+            setBtn(btnInject,  false, inactiveColor, "INJECT...")
+            setBtn(btnSave, false, inactiveColor, "SAVE APK")
+            setBtn(btnLaunch,  false, inactiveColor, "LAUNCH")
+            setBtn(btnStop,    false, inactiveColor, "STOP")
+        }
+        PipelineState.INJECTED -> {
+            setBtn(btnInject,  true,  successColor,  "INJECT ✓")
+            setBtn(btnSave, true,  activeColor,   "SAVE APK")
+            setBtn(btnLaunch,  false, inactiveColor, "LAUNCH")
+            setBtn(btnStop,    false, inactiveColor, "STOP")
+        }
+        PipelineState.INSTALLING -> {
+            setBtn(btnInject,  true,  successColor,  "INJECT ✓")
+            setBtn(btnSave, false, inactiveColor, "SAVING...")
+            setBtn(btnLaunch,  false, inactiveColor, "LAUNCH")
+            setBtn(btnStop,    false, inactiveColor, "STOP")
+        }
+        PipelineState.INSTALLED -> {
+            setBtn(btnInject,  true,  successColor,  "INJECT ✓")
+            setBtn(btnSave, true,  successColor,  "SAVED ✓")
+            setBtn(btnLaunch,  true,  activeColor,   "LAUNCH")
+            setBtn(btnStop,    false, inactiveColor, "STOP")
+        }
+        PipelineState.LAUNCHING -> {
+            setBtn(btnInject,  true,  successColor,  "INJECT ✓")
+            setBtn(btnSave, true,  successColor,  "SAVED ✓")
+            setBtn(btnLaunch,  false, inactiveColor, "LAUNCH...")
+            setBtn(btnStop,    false, inactiveColor, "STOP")
+        }
+        PipelineState.TRACING -> {
+            setBtn(btnInject,  true,  successColor,  "INJECT ✓")
+            setBtn(btnSave, true,  successColor,  "SAVED ✓")
+            setBtn(btnLaunch,  true,  successColor,  "LAUNCH ✓")
+            setBtn(btnStop,    true,  dangerColor,   "STOP")
         }
     }
+}
 
     private fun setBtn(
         btn: TextView,
@@ -544,7 +567,7 @@ class MainActivity : AppCompatActivity() {
             InjectStep.PATCH_MANIFEST -> "📝"
             InjectStep.ZIPALIGN      -> "🔧"
             InjectStep.SIGN          -> "🔑"
-            InjectStep.INSTALL       -> "📦"
+            InjectStep.INSTALL       -> "💾"
             InjectStep.PUSH_AGENT    -> "📤"
             InjectStep.LAUNCH        -> "🚀"
             InjectStep.STOPPED       -> "⏹"

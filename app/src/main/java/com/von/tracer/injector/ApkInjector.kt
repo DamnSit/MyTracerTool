@@ -66,38 +66,27 @@ class ApkInjector(private val context: Context) {
     // INSTALL — PackageInstaller API (no root)
     // ──────────────────────────────────────────────
 
-    fun install(apkFile: File) {
-        report(InjectStep.INSTALL, "Memulai install via PackageInstaller...")
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                // Android 7+ — pakai FileProvider
-                val uri = FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.provider",
-                    apkFile
-                )
-                val intent = Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(uri, "application/vnd.android.package-archive")
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(intent)
-            } else {
-                val intent = Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(
-                        Uri.fromFile(apkFile),
-                        "application/vnd.android.package-archive"
-                    )
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(intent)
-            }
-            report(InjectStep.INSTALL, "Dialog install dibuka — tunggu user konfirmasi")
+    fun saveApk(apkFile: File): File? {
+    return try {
+        val destDir = File(
+            android.os.Environment.getExternalStoragePublicDirectory(
+                android.os.Environment.DIRECTORY_DOWNLOADS
+            ),
+            "VonTracer"
+        )
+        destDir.mkdirs()
 
-        } catch (e: Exception) {
-            onError?.invoke(InjectStep.INSTALL, "Install gagal: ${e.message}")
-        }
+        val destFile = File(destDir, "patched_${System.currentTimeMillis()}.apk")
+        apkFile.copyTo(destFile, overwrite = true)
+
+        report(InjectStep.INSTALL, "APK disimpan: ${destFile.absolutePath}")
+        destFile
+
+    } catch (e: Exception) {
+        onError?.invoke(InjectStep.INSTALL, "Simpan APK gagal: ${e.message}")
+        null
     }
+}
 
     // ──────────────────────────────────────────────
     // PUSH AGENT — simpan ke external files dir

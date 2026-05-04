@@ -92,7 +92,7 @@
                 android:textSize="10sp" />
 
             <TextView
-                android:id="@+id/stepInstall"
+                android:id="@+id/stepSave"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -252,11 +252,11 @@
             android:background="#FF21262D" />
 
         <TextView
-            android:id="@+id/btnInstall"
+            android:id="@+id/btnSave"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="INSTALL"
+            android:text="SAVE APK"
             android:gravity="center"
             android:textSize="12sp"
             android:textStyle="bold"
