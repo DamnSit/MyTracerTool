@@ -7,9 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
 import android.provider.OpenableColumns
-import android.view.View
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
@@ -385,7 +383,9 @@ class MainActivity : AppCompatActivity() {
     private fun exportLog() {
         scope.launch(Dispatchers.IO) {
             try {
-                val content = logFragment.exportLog()
+                val content = withContext(Dispatchers.Main) {
+                logFragment.exportLog()
+                }
                 val fileName = "von_trace_${System.currentTimeMillis()}.txt"
                 val exportFile = File(
                     getExternalFilesDir(null),

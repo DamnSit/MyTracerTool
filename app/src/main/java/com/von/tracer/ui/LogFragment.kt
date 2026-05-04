@@ -11,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
+import android.widget.LinearLayout
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -24,7 +25,7 @@ class LogFragment : Fragment() {
     }
 
     private lateinit var rvTree: RecyclerView
-    private lateinit var tvEmpty: TextView
+    private lateinit var tvEmpty: LinearLayout
     private lateinit var tvNodeCount: TextView
     private lateinit var tvServerStatus: TextView
 

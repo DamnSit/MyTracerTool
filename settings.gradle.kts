@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "MyTracerTool"
-include ':app'
+include(":app")
