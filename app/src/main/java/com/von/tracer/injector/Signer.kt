@@ -17,33 +17,6 @@ class Signer(
         private const val TAG = "Signer"
     }
 
-    fun zipalign(apkFile: File): File {
-        Log.d(TAG, "Zipalign: ${apkFile.name}")
-        val output = File(workDir, "target_aligned.apk")
-
-        ZipFile(apkFile).use { sourceZip ->
-            ZipOutputStream(FileOutputStream(output)).use { outZip ->
-                sourceZip.entries().asSequence().forEach { entry ->
-                    val newEntry = ZipEntry(entry.name)
-                    if (entry.method == ZipEntry.STORED) {
-                        newEntry.method = ZipEntry.STORED
-                        newEntry.size = entry.size
-                        newEntry.compressedSize = entry.size
-                        newEntry.crc = entry.crc
-                    } else {
-                        newEntry.method = ZipEntry.DEFLATED
-                    }
-                    outZip.putNextEntry(newEntry)
-                    sourceZip.getInputStream(entry).use { it.copyTo(outZip) }
-                    outZip.closeEntry()
-                }
-            }
-        }
-
-        Log.d(TAG, "Zipalign done: ${output.length() / 1024}KB")
-        return output
-    }
-
     fun sign(apkFile: File): File {
     Log.d(TAG, "Output unsigned, META-INF preserved...")
     val output = File(workDir, "target_unsigned.apk")

@@ -35,30 +35,8 @@ class ManifestPatcher(private val workDir: File) {
      * 3. Set android:networkSecurityConfig (opsional)
      */
     fun patch(apkFile: File) {
-        Log.d(TAG, "Patching manifest...")
-
-        val tempOutput = File(workDir, "target_manifest.apk")
-
-        // Extract manifest binary dari APK
-        val manifestBytes = extractManifest(apkFile)
-            ?: throw IllegalStateException("Manifest tidak ditemukan di APK")
-
-        // Parse binary XML → patch → encode ulang
-        val patcher = BinaryXmlPatcher(manifestBytes)
-        val patched = patcher.apply {
-            ensurePermissions(REQUIRED_PERMISSIONS)
-            setExtractNativeLibs(true)
-            disableNetworkSecurityCheck()
-        }.build()
-
-        // Repack APK dengan manifest baru
-        repackWithManifest(apkFile, tempOutput, patched)
-
-        tempOutput.copyTo(apkFile, overwrite = true)
-        tempOutput.delete()
-
-        Log.d(TAG, "Manifest patched")
-    }
+    Log.d(TAG, "Manifest patch DISABLED (safe mode)")
+}
 
     // ──────────────────────────────────────────────
     // EXTRACT MANIFEST

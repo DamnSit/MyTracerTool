@@ -33,38 +33,32 @@ class ApkInjector(private val context: Context) {
     // ──────────────────────────────────────────────
 
     fun inject(sourceApkPath: String): File? {
-        return try {
-            setupWorkDir()
+    return try {
+        setupWorkDir()
 
-            val workApk = copyApk(sourceApkPath)
+        val workApk = copyApk(sourceApkPath)
 
-            val gadgetInjector = GadgetInjector(context, workDir)
-            gadgetInjector.inject(workApk)
-            report(InjectStep.INJECT_GADGET, "Gadget injected")
+        // 🔥 Inject langsung (tanpa APKEditor)
+        val gadgetInjector = GadgetInjector(context, workDir)
+        gadgetInjector.inject(workApk)
+        report(InjectStep.INJECT_GADGET, "Gadget injected")
 
-            val manifestPatcher = ManifestPatcher(workDir)
-            manifestPatcher.patch(workApk)
-            report(InjectStep.PATCH_MANIFEST, "Manifest patched")
+        // 🔥 Patch manifest (kalau perlu)
+        val manifestPatcher = ManifestPatcher(workDir)
+        manifestPatcher.patch(workApk)
+        report(InjectStep.PATCH_MANIFEST, "Manifest patched")
 
-            val signer = Signer(context, workDir)
-            val aligned = signer.zipalign(workApk)
-            report(InjectStep.ZIPALIGN, "Zipalign done")
+        // ⚠️ JANGAN sign di sini (signer lu belum valid)
+        report(InjectStep.SIGN, "Unsigned APK ready")
 
-            val signed = signer.sign(aligned)
-            report(InjectStep.SIGN, "APK signed: ${signed.name}")
+        workApk
 
-            signed
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Inject failed", e)
-            onError?.invoke(InjectStep.UNKNOWN, e.message ?: "Unknown error")
-            null
-        }
+    } catch (e: Exception) {
+        Log.e(TAG, "Inject failed", e)
+        onError?.invoke(InjectStep.UNKNOWN, e.message ?: "Unknown error")
+        null
     }
-
-    // ──────────────────────────────────────────────
-    // INSTALL — PackageInstaller API (no root)
-    // ──────────────────────────────────────────────
+}
 
     fun saveApk(apkFile: File): File? {
     return try {
@@ -113,31 +107,42 @@ class ApkInjector(private val context: Context) {
     // ──────────────────────────────────────────────
 
     fun launchApp(packageName: String): Boolean {
-        return try {
-            // Push agent dulu sebelum launch
-            pushAgentScript()
+    return try {
+        pushAgentScript()
 
-            val launchIntent = context.packageManager
-                .getLaunchIntentForPackage(packageName)
-
-            if (launchIntent == null) {
-                onError?.invoke(
-                    InjectStep.LAUNCH,
-                    "App $packageName tidak ditemukan / belum diinstall"
-                )
-                return false
-            }
-
-            launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(launchIntent)
-            report(InjectStep.LAUNCH, "Launched: $packageName")
-            true
-
-        } catch (e: Exception) {
-            onError?.invoke(InjectStep.LAUNCH, e.message ?: "Launch error")
-            false
+        if (!isAppInstalled(packageName)) {
+            onError?.invoke(
+                InjectStep.LAUNCH,
+                "App $packageName belum terinstall"
+            )
+            return false
         }
+
+        val pm = context.packageManager
+
+        val launchIntent =
+            pm.getLaunchIntentForPackage(packageName)
+                ?: pm.getLeanbackLaunchIntentForPackage(packageName)
+
+        if (launchIntent == null) {
+            onError?.invoke(
+                InjectStep.LAUNCH,
+                "Launch intent null (split / protected app)"
+            )
+            return false
+        }
+
+        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(launchIntent)
+
+        report(InjectStep.LAUNCH, "Launched: $packageName")
+        true
+
+    } catch (e: Exception) {
+        onError?.invoke(InjectStep.LAUNCH, e.message ?: "Launch error")
+        false
     }
+}
 
     // ──────────────────────────────────────────────
     // STOP TRACE
@@ -185,6 +190,16 @@ class ApkInjector(private val context: Context) {
         Log.d(TAG, "[${step.name}] $message")
         onProgress?.invoke(step, message)
     }
+    
+    private fun isAppInstalled(pkg: String): Boolean {
+    return try {
+        val pm = context.packageManager
+        val apps = pm.getInstalledPackages(0)
+        apps.any { it.packageName == pkg }
+    } catch (e: Exception) {
+        false
+    }
+}
 }
 
 enum class InjectStep {
@@ -192,7 +207,6 @@ enum class InjectStep {
     COPY_APK,
     INJECT_GADGET,
     PATCH_MANIFEST,
-    ZIPALIGN,
     SIGN,
     INSTALL,
     PUSH_AGENT,

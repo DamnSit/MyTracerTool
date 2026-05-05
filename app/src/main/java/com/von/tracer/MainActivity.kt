@@ -565,7 +565,6 @@ private fun openDownloadFolder() {
             InjectStep.COPY_APK      -> "📋"
             InjectStep.INJECT_GADGET -> "💉"
             InjectStep.PATCH_MANIFEST -> "📝"
-            InjectStep.ZIPALIGN      -> "🔧"
             InjectStep.SIGN          -> "🔑"
             InjectStep.INSTALL       -> "💾"
             InjectStep.PUSH_AGENT    -> "📤"
