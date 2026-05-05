@@ -1,0 +1,21 @@
+{
+  "allFiles": [
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/java/com/von/tracer/injector/Signer.kt",
+      "selection": {
+        "end": {
+          "column": 1,
+          "index": 2395,
+          "line": 70
+        },
+        "start": {
+          "column": 1,
+          "index": 2395,
+          "line": 70
+        }
+      }
+    }
+  ],
+  "projectPath": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool",
+  "selectedFile": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/java/com/von/tracer/injector/Signer.kt"
+}

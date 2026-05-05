@@ -112,42 +112,89 @@ class GadgetInjector(
 
                 // Entry yang akan di-skip (akan kita replace)
                 val skipEntries = mutableSetOf<String>()
-                archs.forEach { arch ->
-                    skipEntries.add("lib/$arch/libgadget.so")
-                    skipEntries.add("lib/$arch/libgadget.config.so")
-                }
-                skipEntries.add("META-INF/CERT.RSA")
-                skipEntries.add("META-INF/CERT.SF")
-                skipEntries.add("META-INF/MANIFEST.MF")
-                // Hapus signature lama supaya sign ulang bisa jalan
 
-                // Copy semua entry dari APK asli
-                sourceZip.entries().asSequence().forEach { entry ->
-                    if (entry.name in skipEntries) {
-                        Log.d(TAG, "Skip entry: ${entry.name}")
-                        return@forEach
-                    }
-                    outZip.putNextEntry(ZipEntry(entry.name))
-                    sourceZip.getInputStream(entry).use { it.copyTo(outZip) }
-                    outZip.closeEntry()
-                }
+// Skip gadget lama (biar ke-replace)
+archs.forEach { arch ->
+    skipEntries.add("lib/$arch/libgadget.so")
+    skipEntries.add("lib/$arch/libgadget.config.so")
+}
+
+// Biar aman dari duplicate entry saat repack
+val writtenEntries = mutableSetOf<String>()
+
+sourceZip.entries().asSequence().forEach { entry ->
+    val name = entry.name
+    val upper = name.uppercase()
+
+    val isSignature = name.startsWith("META-INF/") && (
+        upper.endsWith(".RSA") ||
+        upper.endsWith(".DSA") ||
+        upper.endsWith(".EC")  ||
+        upper.endsWith(".SF")  ||
+        name == "META-INF/MANIFEST.MF"
+    )
+
+    if (name in skipEntries || isSignature) {
+        Log.d(TAG, "Skip entry: $name")
+        return@forEach
+    }
+
+    // Hindari duplicate (beberapa APK punya entry dobel)
+    if (!writtenEntries.add(name)) {
+        Log.d(TAG, "Duplicate skip: $name")
+        return@forEach
+    }
+
+    val newEntry = ZipEntry(name)
+    newEntry.method = entry.method
+
+    if (entry.method == ZipEntry.STORED) {
+        newEntry.size = entry.size
+        newEntry.compressedSize = entry.compressedSize
+        newEntry.crc = entry.crc
+    }
+
+    // Preserve extra + time (opsional tapi bagus)
+    newEntry.time = entry.time
+    newEntry.extra = entry.extra
+
+    outZip.putNextEntry(newEntry)
+    sourceZip.getInputStream(entry).use { it.copyTo(outZip) }
+    outZip.closeEntry()
+}
 
                 // Inject libgadget.so ke setiap arch yang ada
                 archs.forEach { arch ->
-                    val gadgetEntry = "lib/$arch/libgadget.so"
-                    Log.d(TAG, "Injecting: $gadgetEntry")
-                    outZip.putNextEntry(ZipEntry(gadgetEntry))
-                    gadgetFile.inputStream().use { it.copyTo(outZip) }
-                    outZip.closeEntry()
+    val gadgetEntryName = "lib/$arch/libgadget.so"
+    Log.d(TAG, "Injecting: $gadgetEntryName")
 
-                    // Gadget config — nama harus sama persis dengan .so tapi .config.so
-                    // Frida gadget akan auto-load ini
-                    val configEntry = "lib/$arch/libgadget.config.so"
-                    Log.d(TAG, "Injecting config: $configEntry")
-                    outZip.putNextEntry(ZipEntry(configEntry))
-                    configFile.inputStream().use { it.copyTo(outZip) }
-                    outZip.closeEntry()
-                }
+    if (!writtenEntries.add(gadgetEntryName)) {
+        Log.d(TAG, "Duplicate skip (inject): $gadgetEntryName")
+    } else {
+        val gadgetEntry = ZipEntry(gadgetEntryName).apply {
+            method = ZipEntry.DEFLATED
+            time = System.currentTimeMillis()
+        }
+        outZip.putNextEntry(gadgetEntry)
+        gadgetFile.inputStream().use { it.copyTo(outZip) }
+        outZip.closeEntry()
+    }
+
+    val configEntryName = "lib/$arch/libgadget.config.so"
+    Log.d(TAG, "Injecting config: $configEntryName")
+
+    if (!writtenEntries.add(configEntryName)) {
+        Log.d(TAG, "Duplicate skip (inject): $configEntryName")
+    } else {
+        val configEntry = ZipEntry(configEntryName).apply {
+            method = ZipEntry.DEFLATED
+            time = System.currentTimeMillis()
+        }
+        outZip.putNextEntry(configEntry)
+        configFile.inputStream().use { it.copyTo(outZip) }
+        outZip.closeEntry()
+    }
+}
 
                 Log.d(TAG, "Repack selesai")
             }
