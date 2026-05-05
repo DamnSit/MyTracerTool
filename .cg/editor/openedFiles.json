@@ -14,8 +14,53 @@
           "line": 6
         }
       }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/java/com/von/tracer/MainActivity.kt",
+      "selection": {
+        "end": {
+          "column": 1,
+          "index": 19219,
+          "line": 595
+        },
+        "start": {
+          "column": 0,
+          "index": 0,
+          "line": 0
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/java/com/von/tracer/injector/Signer.kt",
+      "selection": {
+        "end": {
+          "column": 35,
+          "index": 419,
+          "line": 20
+        },
+        "start": {
+          "column": 35,
+          "index": 419,
+          "line": 20
+        }
+      }
+    },
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/java/com/von/tracer/injector/GadgetInjector.kt",
+      "selection": {
+        "end": {
+          "column": 0,
+          "index": 0,
+          "line": 0
+        },
+        "start": {
+          "column": 0,
+          "index": 0,
+          "line": 0
+        }
+      }
     }
   ],
   "projectPath": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool",
-  "selectedFile": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/assets/gadget-config.json"
+  "selectedFile": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/java/com/von/tracer/injector/Signer.kt"
 }

@@ -1,7 +1,7 @@
 {
   "interaction": {
     "type": "script",
-    "path": "/data/data/com.von.tracer/files/von_agent.js",
+    "path": "/sdcard/Android/data/com.von.tracer/files/von_agent.js",
     "on_change": "reload"
   }
 }
