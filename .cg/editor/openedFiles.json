@@ -1,126 +1,21 @@
 {
   "allFiles": [
     {
-      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/java/com/von/tracer/injector/Signer.kt",
-      "selection": {
-        "end": {
-          "column": 5,
-          "index": 389,
-          "line": 17
-        },
-        "start": {
-          "column": 5,
-          "index": 389,
-          "line": 17
-        }
-      }
-    },
-    {
-      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/java/com/von/tracer/injector/GadgetInjector.kt",
-      "selection": {
-        "end": {
-          "column": 1,
-          "index": 7261,
-          "line": 225
-        },
-        "start": {
-          "column": 0,
-          "index": 0,
-          "line": 0
-        }
-      }
-    },
-    {
-      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/java/com/von/tracer/injector/ApkInjector.kt",
-      "selection": {
-        "end": {
-          "column": 0,
-          "index": 6355,
-          "line": 203
-        },
-        "start": {
-          "column": 0,
-          "index": 6355,
-          "line": 203
-        }
-      }
-    },
-    {
-      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/java/com/von/tracer/MainActivity.kt",
-      "selection": {
-        "end": {
-          "column": 45,
-          "index": 18408,
-          "line": 566
-        },
-        "start": {
-          "column": 45,
-          "index": 18408,
-          "line": 566
-        }
-      }
-    },
-    {
-      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/java/com/von/tracer/injector/APKEditorRunner.kt",
-      "selection": {
-        "end": {
-          "column": 1,
-          "index": 1550,
-          "line": 59
-        },
-        "start": {
-          "column": 1,
-          "index": 1550,
-          "line": 59
-        }
-      }
-    },
-    {
-      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/build.gradle.kts",
-      "selection": {
-        "end": {
-          "column": 1,
-          "index": 1653,
-          "line": 65
-        },
-        "start": {
-          "column": 0,
-          "index": 1652,
-          "line": 65
-        }
-      }
-    },
-    {
       "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/assets/gadget-config.json",
       "selection": {
         "end": {
           "column": 1,
-          "index": 144,
+          "index": 134,
           "line": 6
         },
         "start": {
           "column": 1,
-          "index": 144,
+          "index": 134,
           "line": 6
-        }
-      }
-    },
-    {
-      "file": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/java/com/von/tracer/injector/ManifestPatcher.kt",
-      "selection": {
-        "end": {
-          "column": 49,
-          "index": 1590,
-          "line": 47
-        },
-        "start": {
-          "column": 49,
-          "index": 1590,
-          "line": 47
         }
       }
     }
   ],
   "projectPath": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool",
-  "selectedFile": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/java/com/von/tracer/injector/ApkInjector.kt"
+  "selectedFile": "/storage/emulated/0/CodeOnTheGoProjects/MyTracerTool/app/src/main/assets/gadget-config.json"
 }

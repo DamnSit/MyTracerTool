@@ -1,15 +1,7 @@
-// VON Tracer Agent
-// Di-push ke target app via ApkInjector.pushAgentScript()
-// Load otomatis oleh frida-gadget saat app launch
-
 'use strict';
 
 var TARGET_HOST = '127.0.0.1';
 var TARGET_PORT = 27043;
-
-// ──────────────────────────────────────────────
-// SOCKET SEND
-// ──────────────────────────────────────────────
 
 function sendTrace(data) {
     try {
@@ -21,13 +13,10 @@ function sendTrace(data) {
         out.close();
         socket.close();
     } catch (e) {
-        // Silently fail — tool mungkin belum ready
+        console.log("SEND FAIL: " + e);
     }
 }
 
-// ──────────────────────────────────────────────
-// CALL STACK BUILDER
-// ──────────────────────────────────────────────
 
 function getCallStack() {
     var stack = [];
@@ -59,9 +48,6 @@ function getCallStack() {
     return stack;
 }
 
-// ──────────────────────────────────────────────
-// OFFSET RESOLVER
-// ──────────────────────────────────────────────
 
 function getMethodOffset(className, methodName) {
     try {
@@ -94,13 +80,13 @@ function getMethodOffset(className, methodName) {
     return '0x?';
 }
 
-// ──────────────────────────────────────────────
-// MAIN HOOKS
-// ──────────────────────────────────────────────
 
 Java.perform(function () {
 
-    // ── 1. Hook View.performClick ──────────────
+     console.log("🔥 AGENT HIDUP");
+
+     sendTrace({ test: "HELLO" });
+
     try {
         var View = Java.use('android.view.View');
 
@@ -130,7 +116,6 @@ Java.perform(function () {
         };
     } catch (e) {}
 
-    // ── 2. Hook MotionEvent (raw touch) ────────
     try {
         var DecorView = Java.use('com.android.internal.policy.DecorView');
 
@@ -150,17 +135,12 @@ Java.perform(function () {
         };
     } catch (e) {}
 
-    // ── 3. Hook semua method di package target ─
     hookTargetPackage();
 
-    // ── 4. Hook Native calls (opsional) ────────
     hookNativeCalls();
 
 });
 
-// ──────────────────────────────────────────────
-// HOOK TARGET PACKAGE
-// ──────────────────────────────────────────────
 
 function hookTargetPackage() {
     try {
@@ -224,9 +204,6 @@ function hookSingleMethod(clazz, className, methodName) {
     });
 }
 
-// ──────────────────────────────────────────────
-// HOOK NATIVE CALLS
-// ──────────────────────────────────────────────
 
 function hookNativeCalls() {
     try {
